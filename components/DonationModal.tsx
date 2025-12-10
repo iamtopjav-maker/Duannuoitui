@@ -8,9 +8,10 @@ interface DonationModalProps {
   onClose: () => void;
   amount: string;
   packageName: string;
+  onSuccess?: (message: string) => void;
 }
 
-const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, amount, packageName }) => {
+const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, amount, packageName, onSuccess }) => {
   const [supportCode, setSupportCode] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -29,31 +30,88 @@ const DonationModal: React.FC<DonationModalProps> = ({ isOpen, onClose, amount, 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const triggerCustomEffect = () => {
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    // Default configuration (fallback)
+    let colors = ['#ff0000', '#00ff00', '#0000ff'];
+    let particleCountMultiplier = 1;
+    let successMsg = "Cảm ơn bạn đã donate!";
+
+    // Logic based on package name
+    if (packageName.includes("Lộc Phát")) {
+       colors = ['#10b981', '#fbbf24', '#f59e0b']; // Green & Gold
+       successMsg = "Tuyệt vời! +68 điểm may mắn đã được cộng vào đời bạn!";
+    } else if (packageName.includes("Vui Vẻ")) {
+       colors = ['#f97316', '#ef4444', '#eab308', '#3b82f6']; // Rainbow / Bright
+       successMsg = "Đã nhận! Tối nay tui có trà sữa uống rồi, cảm ơn bồ tèo!";
+    } else if (packageName.includes("Người Yêu")) {
+       colors = ['#ec4899', '#db2777', '#be185d', '#ffffff']; // Pinks & Reds
+       successMsg = "Yêu anh/em nhất trên đời! Chụt chụt 😘";
+    } else if (packageName.includes("Dân Chơi")) {
+       colors = ['#a855f7', '#6366f1', '#ec4899']; // Purple/Neon
+       successMsg = "U là trời! Đẳng cấp dân chơi là đây. Respect 🙏";
+       particleCountMultiplier = 1.5;
+    } else if (packageName.includes("Shark Tank")) {
+       colors = ['#fbbf24', '#d97706', '#ffffff']; // Pure Gold
+       successMsg = "Shark đã chốt deal! Em hứa sẽ sinh lời (bằng cân nặng)!";
+       particleCountMultiplier = 2;
+    } else if (packageName.includes("Vô Cực")) {
+       colors = ['#ffffff', '#000000', '#ef4444', '#3b82f6']; // Everything
+       successMsg = "ĐÃ NHẬN ĐƯỢC LINH HỒN CỦA BẠN. CHỦ NHÂN!!! 🙇‍♂️";
+       particleCountMultiplier = 3;
+    }
+
+    // Call the success callback immediately to show the popup in App.tsx
+    if (onSuccess) onSuccess(successMsg);
+
+    // Fire Confetti Loop
+    (function frame() {
+      confetti({
+        particleCount: 5 * particleCountMultiplier,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: colors,
+        zIndex: 101 // Higher than modals
+      });
+      confetti({
+        particleCount: 5 * particleCountMultiplier,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: colors,
+        zIndex: 101
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+
+    // Special Burst for specific packages
+    if (packageName.includes("Người Yêu")) {
+        // Heart-like colors burst
+         setTimeout(() => {
+             confetti({
+                particleCount: 100,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#ec4899', '#ffc0cb'],
+                zIndex: 101,
+                scalar: 1.2
+             });
+         }, 500);
+    }
+  };
+
   const handleConfirm = () => {
-      // Massive Fireworks Effect
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+      // 1. Close modal immediately
+      onClose();
 
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-      const interval: any = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-        // since particles fall down, start a bit higher than random
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-      }, 250);
-
-      // Close modal after effect
-      setTimeout(() => {
-          onClose();
-      }, 3500);
+      // 2. Trigger Visual Effects & Success Message
+      triggerCustomEffect();
   }
 
   if (!isOpen) return null;
